@@ -4,6 +4,15 @@
 
 InterviewIQ is an AI-powered job interview and career preparation platform built with a full-stack TypeScript architecture. The application consists of a React frontend, Express.js backend, and PostgreSQL database with AI integration through OpenAI APIs for CV analysis, interview feedback, and career insights.
 
+## Recent Changes
+
+### January 21, 2025 - Database Integration
+- ✅ Migrated from in-memory storage to PostgreSQL database
+- ✅ Implemented DatabaseStorage class with full CRUD operations
+- ✅ Added database relations and constraints via Drizzle ORM
+- ✅ Configured PostgreSQL session store for persistent authentication
+- ✅ Database schema deployed with: users, cv_analyses, mock_interviews, user_progress tables
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -27,10 +36,11 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: Express sessions with PostgreSQL store
 
 ### Data Storage Solutions
-- **Primary Database**: PostgreSQL with Drizzle ORM
-- **Database Provider**: Neon serverless PostgreSQL
+- **Primary Database**: PostgreSQL with Drizzle ORM (ACTIVE - January 2025)
+- **Database Provider**: Replit PostgreSQL instance 
 - **Schema Management**: Drizzle Kit for migrations and schema management
 - **Session Storage**: PostgreSQL-backed session store for authentication
+- **Data Persistence**: All user data, CV analyses, mock interviews, and progress tracking stored in PostgreSQL
 
 ## Key Components
 

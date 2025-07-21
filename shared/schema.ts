@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -76,3 +77,22 @@ export type InsertMockInterview = z.infer<typeof insertMockInterviewSchema>;
 export type MockInterview = typeof mockInterviews.$inferSelect;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 export type UserProgress = typeof userProgress.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ many, one }) => ({
+  cvAnalyses: many(cvAnalyses),
+  mockInterviews: many(mockInterviews),
+  progress: one(userProgress, { fields: [users.id], references: [userProgress.userId] }),
+}));
+
+export const cvAnalysesRelations = relations(cvAnalyses, ({ one }) => ({
+  user: one(users, { fields: [cvAnalyses.userId], references: [users.id] }),
+}));
+
+export const mockInterviewsRelations = relations(mockInterviews, ({ one }) => ({
+  user: one(users, { fields: [mockInterviews.userId], references: [users.id] }),
+}));
+
+export const userProgressRelations = relations(userProgress, ({ one }) => ({
+  user: one(users, { fields: [userProgress.userId], references: [users.id] }),
+}));
