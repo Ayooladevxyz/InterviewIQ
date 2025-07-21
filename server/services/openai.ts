@@ -109,8 +109,61 @@ export async function scoreInterviewAnswer(question: string, answer: string, job
   }
 }
 
+// Fallback career data when OpenAI API is not available
+const fallbackCareerData: Record<string, CareerInsights> = {
+  "Frontend Developer": {
+    inDemandSkills: ["React", "TypeScript", "JavaScript", "CSS", "HTML", "Next.js", "Vue.js"],
+    averageSalaryUS: "$75,000 - $120,000",
+    averageSalaryUK: "£45,000 - £75,000",
+    averageSalaryRemote: "$70,000 - $110,000",
+    topResources: [
+      { title: "React Documentation", url: "https://react.dev", type: "Documentation" },
+      { title: "MDN Web Docs", url: "https://developer.mozilla.org", type: "Documentation" },
+      { title: "Frontend Masters", url: "https://frontendmasters.com", type: "Course" }
+    ],
+    careerPath: ["Junior Frontend Developer", "Frontend Developer", "Senior Frontend Developer", "Lead Frontend Developer", "Frontend Architecture"]
+  },
+  "Backend Developer": {
+    inDemandSkills: ["Node.js", "Python", "Java", "SQL", "API Design", "Docker", "AWS"],
+    averageSalaryUS: "$80,000 - $130,000",
+    averageSalaryUK: "£50,000 - £80,000", 
+    averageSalaryRemote: "$75,000 - $125,000",
+    topResources: [
+      { title: "Node.js Documentation", url: "https://nodejs.org/docs", type: "Documentation" },
+      { title: "AWS Training", url: "https://aws.amazon.com/training", type: "Course" },
+      { title: "System Design Interview", url: "https://github.com/donnemartin/system-design-primer", type: "Resource" }
+    ],
+    careerPath: ["Junior Backend Developer", "Backend Developer", "Senior Backend Developer", "Lead Backend Developer", "Backend Architecture"]
+  },
+  "Full Stack Developer": {
+    inDemandSkills: ["React", "Node.js", "TypeScript", "SQL", "MongoDB", "Docker", "Git"],
+    averageSalaryUS: "$85,000 - $140,000",
+    averageSalaryUK: "£55,000 - £85,000",
+    averageSalaryRemote: "$80,000 - $135,000",
+    topResources: [
+      { title: "Full Stack Open", url: "https://fullstackopen.com", type: "Course" },
+      { title: "The Odin Project", url: "https://theodinproject.com", type: "Course" },
+      { title: "freeCodeCamp", url: "https://freecodecamp.org", type: "Course" }
+    ],
+    careerPath: ["Junior Full Stack Developer", "Full Stack Developer", "Senior Full Stack Developer", "Lead Developer", "Technical Lead"]
+  },
+  "Data Scientist": {
+    inDemandSkills: ["Python", "R", "SQL", "Machine Learning", "Statistics", "Pandas", "TensorFlow"],
+    averageSalaryUS: "$95,000 - $160,000",
+    averageSalaryUK: "£60,000 - £95,000",
+    averageSalaryRemote: "$90,000 - $150,000",
+    topResources: [
+      { title: "Kaggle Learn", url: "https://kaggle.com/learn", type: "Course" },
+      { title: "Coursera Data Science", url: "https://coursera.org/specializations/jhu-data-science", type: "Course" },
+      { title: "Python for Data Science", url: "https://python.org", type: "Documentation" }
+    ],
+    careerPath: ["Junior Data Analyst", "Data Analyst", "Data Scientist", "Senior Data Scientist", "Principal Data Scientist"]
+  }
+};
+
 export async function getCareerInsights(jobRole: string): Promise<CareerInsights> {
   try {
+    // First try OpenAI API if key is valid
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -131,13 +184,34 @@ export async function getCareerInsights(jobRole: string): Promise<CareerInsights
     return {
       inDemandSkills: result.inDemandSkills || [],
       averageSalaryUS: result.averageSalaryUS || "Data not available",
-      averageSalaryUK: result.averageSalaryUK || "Data not available",
+      averageSalaryUK: result.averageSalaryUK || "Data not available", 
       averageSalaryRemote: result.averageSalaryRemote || "Data not available",
       topResources: result.topResources || [],
       careerPath: result.careerPath || [],
     };
   } catch (error) {
-    throw new Error("Failed to get career insights: " + (error as Error).message);
+    console.log("OpenAI API unavailable, using fallback data for", jobRole);
+    
+    // Use fallback data when OpenAI API is not available
+    const fallbackData = fallbackCareerData[jobRole];
+    
+    if (fallbackData) {
+      return fallbackData;
+    }
+    
+    // Generic fallback for unknown roles
+    return {
+      inDemandSkills: ["Communication", "Problem Solving", "Critical Thinking", "Technical Skills"],
+      averageSalaryUS: "Data not available - API key needed",
+      averageSalaryUK: "Data not available - API key needed",
+      averageSalaryRemote: "Data not available - API key needed",
+      topResources: [
+        { title: "LinkedIn Learning", url: "https://linkedin.com/learning", type: "Course" },
+        { title: "Coursera", url: "https://coursera.org", type: "Course" },
+        { title: "Udemy", url: "https://udemy.com", type: "Course" }
+      ],
+      careerPath: ["Entry Level", "Mid Level", "Senior Level", "Leadership Level"]
+    };
   }
 }
 

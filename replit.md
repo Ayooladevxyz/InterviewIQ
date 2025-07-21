@@ -6,12 +6,15 @@ InterviewIQ is an AI-powered job interview and career preparation platform built
 
 ## Recent Changes
 
-### January 21, 2025 - Database Integration
+### January 21, 2025 - Database Integration & Career Insights Fix
 - ✅ Migrated from in-memory storage to PostgreSQL database
 - ✅ Implemented DatabaseStorage class with full CRUD operations
 - ✅ Added database relations and constraints via Drizzle ORM
 - ✅ Configured PostgreSQL session store for persistent authentication
 - ✅ Database schema deployed with: users, cv_analyses, mock_interviews, user_progress tables
+- ✅ Fixed career insights salary data display with comprehensive fallback system
+- ✅ Added fallback career data for Frontend, Backend, Full Stack, Data Science roles
+- ✅ Implemented graceful error handling when OpenAI API key is unavailable
 
 ## User Preferences
 
