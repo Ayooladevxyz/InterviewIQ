@@ -63,9 +63,9 @@ export default function HomePage() {
     );
   }
 
-  const progress = dashboardData?.progress || { cvScore: 0, interviewCount: 0, averageScore: 0, dayStreak: 0 };
-  const recentInterviews = dashboardData?.recentInterviews || [];
-  const latestCvAnalysis = dashboardData?.latestCvAnalysis || null;
+  const progress = (dashboardData as any)?.progress || { cvScore: 0, interviewCount: 0, averageScore: 0, dayStreak: 0 };
+  const recentInterviews = (dashboardData as any)?.recentInterviews || [];
+  const latestCvAnalysis = (dashboardData as any)?.latestCvAnalysis || null;
 
   return (
     <div className="flex h-screen bg-slate-50">

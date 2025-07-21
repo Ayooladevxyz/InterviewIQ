@@ -29,7 +29,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-slate-200 z-40">
+    <div className="w-64 bg-white shadow-lg border-r border-slate-200 flex-shrink-0 h-screen">
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center space-x-3 mb-8">
