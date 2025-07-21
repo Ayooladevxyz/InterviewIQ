@@ -1,0 +1,117 @@
+# Project Name: InterviewIQ Backend API - Node.js + Express
+
+## 🧑‍💼 CLIENT OVERVIEW
+Build a backend API for an AI-powered job interview and career prep tool. The frontend is already built, and we need endpoints to support key functionality including file parsing, user tracking, voice input, feedback scoring, and more.
+
+---
+
+## 🔐 USER AUTHENTICATION
+
+### Endpoint: POST /register
+- Input: email, password
+- Output: JWT token
+- Save user details and hashed password
+
+### Endpoint: POST /login
+- Input: email, password
+- Output: JWT token
+- Validate user and return token
+
+### Endpoint: GET /me
+- Authenticated route to fetch logged-in user's progress
+
+---
+
+## 📄 CV UPLOAD & PARSING
+
+### Endpoint: POST /upload-cv
+- Accept .pdf or .docx file
+- Parse the text using `pdf-parse` or `mammoth.js`
+- Send parsed content to OpenAI API
+- Return:
+  - Rewritten CV suggestion
+  - Tips for improvement
+
+---
+
+## 🔊 VOICE RECORDING & FEEDBACK
+
+### Endpoint: POST /upload-audio
+- Accept .mp3 or .wav
+- Use OpenAI Whisper to transcribe
+- Send transcription + job role to OpenAI to:
+  - Score the response (1-10)
+  - Suggest a better answer
+
+---
+
+## 💬 INTERVIEW Q&A SCORING
+
+### Endpoint: POST /submit-answer
+- Input: { question, answer, job_role }
+- Use OpenAI or fine-tuned prompt to:
+  - Score the quality of the answer
+  - Rewrite it professionally
+  - Provide bullet-point feedback
+
+---
+
+## 📥 FEEDBACK EXPORT
+
+### Endpoint: GET /export-feedback
+- Generate a downloadable .pdf with:
+  - All feedback
+  - Rewritten answers
+  - CV suggestions
+
+---
+
+## 📊 SMART CAREER HUB
+
+### Endpoint: GET /job-role-insights?role=Frontend Developer
+- Return JSON:
+  - In-demand skills
+  - Average salary (US, UK, Remote)
+  - Top resources (e.g. Udemy links)
+  - Suggested career path in bullet points
+
+---
+
+## 💼 JOB ROLE AUTOSUGGEST
+
+### Endpoint: GET /job-role-list
+- Return list of trending tech roles
+- Support fuzzy search or dropdown population
+
+---
+
+## 💸 (OPTIONAL) PREMIUM PAYMENTS
+
+### Endpoint: POST /initiate-payment
+- Use dummy Stripe test API or Paystack
+- Simulate paywall for premium features
+
+---
+
+## 💾 STACK RECOMMENDATION
+
+Use the following stack:
+- **Node.js + Express**
+- **MongoDB with Mongoose**
+- **Multer** for file uploads
+- **OpenAI + Whisper APIs**
+- **PDFKit or Puppeteer** for export
+- **JWT** for auth
+- **CORS + Rate limiter**
+
+---
+
+## ⚙️ DEPLOYMENT
+
+Generate deployment instructions for:
+- Replit
+- Or render.com / Railway for Node.js
+
+---
+
+Please generate modular routes, reusable middleware (e.g. auth), and use good folder structure:
