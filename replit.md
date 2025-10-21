@@ -2,9 +2,17 @@
 
 ## Overview
 
-InterviewIQ is an AI-powered job interview and career preparation platform built with a full-stack TypeScript architecture. The application consists of a React frontend, Express.js backend, and PostgreSQL database with AI integration through OpenAI APIs for CV analysis, interview feedback, and career insights.
+InterviewIQ is an AI-powered job interview and career preparation platform built with a full-stack TypeScript architecture. The application consists of a React frontend, Express.js backend, and PostgreSQL database with AI integration through Google Gemini for CV analysis, interview feedback, and career insights.
 
 ## Recent Changes
+
+### October 21, 2025 - Migration to Google Gemini
+- ✅ Migrated from OpenAI to Google Gemini AI (gemini-2.5-pro, gemini-2.5-flash)
+- ✅ Removed audio transcription feature (Gemini does not support audio transcription)
+- ✅ Updated mock interviews to text-only mode
+- ✅ Maintained all CV analysis, interview feedback, and career insights functionality
+- ✅ Updated VoiceRecorder component to text-only interface
+- ✅ Kept comprehensive fallback system for career insights when API key is unavailable
 
 ### January 21, 2025 - Database Integration & Career Insights Fix
 - ✅ Migrated from in-memory storage to PostgreSQL database
@@ -14,7 +22,7 @@ InterviewIQ is an AI-powered job interview and career preparation platform built
 - ✅ Database schema deployed with: users, cv_analyses, mock_interviews, user_progress tables
 - ✅ Fixed career insights salary data display with comprehensive fallback system
 - ✅ Added fallback career data for Frontend, Backend, Full Stack, Data Science roles
-- ✅ Implemented graceful error handling when OpenAI API key is unavailable
+- ✅ Implemented graceful error handling when API key is unavailable
 
 ## User Preferences
 
@@ -60,8 +68,10 @@ Preferred communication style: Simple, everyday language.
 - File validation and size limits (10MB)
 
 ### AI Integration Layer
-- OpenAI GPT-4o integration for CV analysis and interview feedback
-- Whisper API for audio transcription
+- Google Gemini integration (gemini-2.5-pro for analysis, gemini-2.5-flash for insights)
+- CV analysis with scoring and improvement suggestions
+- Interview feedback with structured evaluation
+- Career insights with fallback data support
 - Structured JSON responses for consistent data handling
 - Error handling for API failures and rate limiting
 
@@ -76,16 +86,15 @@ Preferred communication style: Simple, everyday language.
 1. User uploads CV file through FileUpload component
 2. Multer processes and validates file format
 3. Document parser extracts text content
-4. OpenAI API analyzes CV and provides scoring/suggestions
+4. Gemini API analyzes CV and provides scoring/suggestions
 5. Results stored in database with user association
 6. Frontend updates with real-time feedback
 
 ### Mock Interview Process
-1. User records audio or submits text answer
-2. Audio transcription via Whisper API (if applicable)
-3. OpenAI evaluates response against job role requirements
-4. Feedback generated with scoring and improvement suggestions
-5. Interview session stored for progress tracking
+1. User submits text answer (audio recording not available with Gemini)
+2. Gemini evaluates response against job role requirements
+3. Feedback generated with scoring and improvement suggestions
+4. Interview session stored for progress tracking
 
 ### User Progress Tracking
 1. Dashboard aggregates user statistics
@@ -96,8 +105,9 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Core AI Services
-- **OpenAI API**: GPT-4o for text analysis, Whisper for audio transcription
-- **API Key Management**: Environment variable configuration
+- **Google Gemini API**: gemini-2.5-pro for CV analysis and interview feedback, gemini-2.5-flash for career insights
+- **Package**: @google/genai for Gemini integration
+- **API Key Management**: Environment variable configuration (GEMINI_API_KEY)
 
 ### Database Services
 - **Neon Database**: Serverless PostgreSQL hosting
@@ -127,7 +137,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Environment Configuration
 - DATABASE_URL for PostgreSQL connection
-- OPENAI_API_KEY for AI service access
+- GEMINI_API_KEY for AI service access
 - SESSION_SECRET for authentication security
 - NODE_ENV for environment-specific behavior
 

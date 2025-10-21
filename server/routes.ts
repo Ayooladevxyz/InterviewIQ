@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { upload, parseDocument, cleanupFile } from "./services/fileUpload";
-import { analyzeCv, transcribeAudio, scoreInterviewAnswer, getCareerInsights, trendingJobRoles } from "./services/openai";
+import { analyzeCv, scoreInterviewAnswer, getCareerInsights, trendingJobRoles } from "./services/gemini";
 import { generateFeedbackReport } from "./services/pdfGenerator";
 import { insertCvAnalysisSchema, insertMockInterviewSchema, UserProgress } from "@shared/schema";
 
@@ -33,7 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse the document
       const parsedText = await parseDocument(filePath, mimeType);
       
-      // Analyze with OpenAI
+      // Analyze with Gemini
       const analysis = await analyzeCv(parsedText);
 
       // Save to storage
@@ -71,67 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Voice Recording & Feedback
-  app.post("/api/upload-audio", requireAuth, upload.single("audio"), async (req: any, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No audio file uploaded" });
-      }
-
-      const { question, jobRole } = req.body;
-      if (!question || !jobRole) {
-        return res.status(400).json({ message: "Question and job role are required" });
-      }
-
-      const filePath = req.file.path;
-
-      // Transcribe audio
-      const transcription = await transcribeAudio(filePath);
-      
-      // Score the answer
-      const feedback = await scoreInterviewAnswer(question, transcription.text, jobRole);
-
-      // Save to storage
-      const mockInterview = await storage.createMockInterview({
-        userId: req.user.id,
-        jobRole,
-        question,
-        answer: transcription.text,
-        score: feedback.score,
-        feedback: feedback.feedback,
-        improvedAnswer: feedback.improvedAnswer,
-        audioUrl: `/uploads/${req.file.filename}`,
-      });
-
-      // Update user progress
-      const currentProgress = await storage.getUserProgress(req.user.id);
-      const interviews = await storage.getMockInterviewsByUserId(req.user.id);
-      const averageScore = interviews.reduce((sum, i) => sum + i.score, 0) / interviews.length;
-
-      await storage.updateUserProgress(req.user.id, {
-        interviewCount: interviews.length,
-        averageScore: Math.round(averageScore * 10) / 10,
-        lastActivityDate: new Date(),
-      });
-
-      res.json({
-        id: mockInterview.id,
-        transcription: transcription.text,
-        score: feedback.score,
-        feedback: feedback.feedback,
-        improvedAnswer: feedback.improvedAnswer,
-        strengths: feedback.strengths,
-        areasForImprovement: feedback.areasForImprovement,
-      });
-    } catch (error) {
-      if (req.file) {
-        cleanupFile(req.file.path);
-      }
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  // Interview Q&A Scoring (text-based)
+  // Interview Q&A Scoring (text-based only - audio transcription not available with Gemini)
   app.post("/api/submit-answer", requireAuth, async (req: any, res) => {
     try {
       const { question, answer, jobRole } = req.body;
