@@ -6,6 +6,8 @@ import { upload, parseDocument, cleanupFile } from "./services/fileUpload";
 import { analyzeCv, scoreInterviewAnswer, getCareerInsights, trendingJobRoles } from "./services/gemini";
 import { generateFeedbackReport } from "./services/pdfGenerator";
 import { insertCvAnalysisSchema, insertMockInterviewSchema, UserProgress } from "@shared/schema";
+import { requireAdminAuth, getAdminToken } from "./services/adminAuth";
+import { seedSampleData } from "./services/seedData";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -100,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateUserProgress(req.user.id, {
         interviewCount: interviews.length,
-        averageScore: Math.round(averageScore * 10) / 10,
+        averageScore: Math.round(averageScore), // Round to nearest integer
         lastActivityDate: new Date(),
       });
 
@@ -224,6 +226,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }
+  });
+
+  // ADMIN ONLY: Seed sample data for demo mode
+  // Requires admin token in Authorization header: "Bearer <ADMIN_SEED_TOKEN>"
+  // Only available in development mode - blocked in production
+  app.post("/api/seed-sample", requireAdminAuth, async (req, res) => {
+    try {
+      const count = parseInt(req.body.count as string) || 1;
+      
+      if (count < 1 || count > 10) {
+        return res.status(400).json({ 
+          message: "Count must be between 1 and 10",
+          error: "INVALID_COUNT"
+        });
+      }
+
+      const result = await seedSampleData(count);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Seed operation failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Development info endpoint - shows admin token and seeding instructions
+  // Only available in development mode
+  app.get("/api/dev-info", (req, res) => {
+    const env = process.env.NODE_ENV || 'development';
+    
+    if (env === 'production') {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    res.json({
+      environment: env,
+      adminToken: getAdminToken(),
+      seedEndpoint: {
+        url: "/api/seed-sample",
+        method: "POST",
+        description: "Create demo users with sample data",
+        authentication: "Bearer token required in Authorization header",
+        body: {
+          count: "Number of demo users to create (1-10)"
+        },
+        example: {
+          curl: `curl -X POST http://localhost:5000/api/seed-sample \\
+  -H "Authorization: Bearer ${getAdminToken()}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"count": 1}'`
+        }
+      },
+      schemaTemplates: {
+        location: "/migrations/mock_backups/",
+        description: "Schema templates showing expected data structure"
+      }
+    });
   });
 
   const httpServer = createServer(app);
