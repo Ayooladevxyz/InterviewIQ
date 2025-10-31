@@ -24,6 +24,15 @@ InterviewIQ is an AI-powered job interview and career preparation platform built
 - ✅ Fixed averageScore to use integer type (matching database schema)
 - ✅ Production guard: Seeding endpoints disabled in production environment
 
+### October 31, 2025 - Enhanced AI Features & Interview Session Management
+- ✅ **Enhanced CV Analysis**: Added structured sections including Strengths, Weaknesses, Next Steps, Career Growth Trajectory, Salary Insights, Extracted Skills, and Detected Job Role
+- ✅ **Course Recommendations**: Gemini-powered course recommendation service with 24-hour in-memory cache providing contextual learning paths from Coursera, Udemy, LinkedIn Learning, and Pluralsight
+- ✅ **Interview Question Generation**: AI-generated interview questions tailored to candidate's CV content and target job role with difficulty levels (easy, medium, hard, mixed)
+- ✅ **Interview Session Management**: New interview_sessions table enabling users to resume incomplete interview sessions
+- ✅ **Database Schema Updates**: Added 7 new columns to cv_analyses table and created interview_sessions table
+- ✅ **API Endpoints**: New REST endpoints for course recommendations, interview questions, and session management
+- ✅ **Architect Review**: Code quality verified with recommendations for Zod validation and expanded test coverage
+
 ### January 21, 2025 - Database Integration & Career Insights Fix
 - ✅ Migrated from in-memory storage to PostgreSQL database
 - ✅ Implemented DatabaseStorage class with full CRUD operations

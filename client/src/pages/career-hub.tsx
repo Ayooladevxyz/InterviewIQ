@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/Sidebar";
-import { Search, TrendingUp, DollarSign, BookOpen, ExternalLink } from "lucide-react";
+import { Search, TrendingUp, DollarSign, BookOpen, ExternalLink, GraduationCap, Star } from "lucide-react";
 
 export default function CareerHubPage() {
   const [selectedRole, setSelectedRole] = useState("Frontend Developer");
@@ -20,6 +20,25 @@ export default function CareerHubPage() {
     queryKey: ["/api/job-role-insights", selectedRole],
     queryFn: () => fetch(`/api/job-role-insights?role=${encodeURIComponent(selectedRole)}`).then(res => res.json()),
     enabled: !!selectedRole,
+  });
+
+  const { data: courses, isLoading: coursesLoading } = useQuery({
+    queryKey: ["/api/course-recommendations", selectedRole],
+    queryFn: async () => {
+      const response = await fetch('/api/course-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          targetRole: selectedRole,
+          currentSkills: insights?.inDemandSkills || [],
+          experienceLevel: "intermediate"
+        })
+      });
+      if (!response.ok) throw new Error('Failed to fetch courses');
+      return response.json();
+    },
+    enabled: !!selectedRole && !!insights,
   });
 
   return (
@@ -143,6 +162,81 @@ export default function CareerHubPage() {
                           </div>
                         ))}
                       </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recommended Courses */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <GraduationCap className="h-5 w-5 text-primary" />
+                        <span>AI-Recommended Courses</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {coursesLoading ? (
+                        <div className="text-center py-4">
+                          <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                          <p className="text-sm text-slate-600">Finding personalized courses...</p>
+                        </div>
+                      ) : courses?.courses && courses.courses.length > 0 ? (
+                        <div className="space-y-3">
+                          {courses.courses.map((course: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="p-4 border border-slate-200 rounded-lg hover:border-primary/50 hover:shadow-sm transition-all"
+                              data-testid={`course-card-${index}`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-slate-800 mb-1" data-testid={`course-title-${index}`}>
+                                    {course.title}
+                                  </h4>
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <Badge variant="outline" className="text-xs" data-testid={`course-platform-${index}`}>
+                                      {course.platform}
+                                    </Badge>
+                                    {course.level && (
+                                      <Badge variant="secondary" className="text-xs" data-testid={`course-level-${index}`}>
+                                        {course.level}
+                                      </Badge>
+                                    )}
+                                    {course.estimatedHours && (
+                                      <span className="text-xs text-slate-500" data-testid={`course-hours-${index}`}>
+                                        {course.estimatedHours}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-slate-600 mb-2" data-testid={`course-description-${index}`}>
+                                    {course.description}
+                                  </p>
+                                  {course.why && (
+                                    <p className="text-xs text-blue-600 italic" data-testid={`course-why-${index}`}>
+                                      {course.why}
+                                    </p>
+                                  )}
+                                </div>
+                                {course.url && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    asChild
+                                    data-testid={`button-view-course-${index}`}
+                                  >
+                                    <a href={course.url} target="_blank" rel="noopener noreferrer">
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-sm text-slate-600">
+                          No course recommendations available at this time.
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
