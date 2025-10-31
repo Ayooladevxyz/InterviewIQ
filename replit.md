@@ -14,6 +14,16 @@ InterviewIQ is an AI-powered job interview and career preparation platform built
 - ✅ Updated VoiceRecorder component to text-only interface
 - ✅ Kept comprehensive fallback system for career insights when API key is unavailable
 
+### October 31, 2025 - Production-Ready Data Management
+- ✅ Removed all mock/test data from the codebase
+- ✅ Created schema template files in `/migrations/mock_backups/` for documentation
+- ✅ Added runtime environment guards to prevent in-memory storage in production
+- ✅ Implemented secure admin seed endpoint (`POST /api/seed-sample`) for demo mode
+- ✅ Added admin token-based authentication for seed operations
+- ✅ Created development info endpoint (`GET /api/dev-info`) with seeding instructions
+- ✅ Fixed averageScore to use integer type (matching database schema)
+- ✅ Production guard: Seeding endpoints disabled in production environment
+
 ### January 21, 2025 - Database Integration & Career Insights Fix
 - ✅ Migrated from in-memory storage to PostgreSQL database
 - ✅ Implemented DatabaseStorage class with full CRUD operations
@@ -52,6 +62,16 @@ Preferred communication style: Simple, everyday language.
 - **Schema Management**: Drizzle Kit for migrations and schema management
 - **Session Storage**: PostgreSQL-backed session store for authentication
 - **Data Persistence**: All user data, CV analyses, mock interviews, and progress tracking stored in PostgreSQL
+- **Storage Modes**:
+  - **Production**: Always uses DatabaseStorage (PostgreSQL) - MemStorage blocked
+  - **Development**: Uses DatabaseStorage by default, MemStorage available via `USE_MEM_STORAGE=true` env var
+  - **Runtime Guards**: Factory function prevents MemStorage in production with error
+- **Demo Data Seeding**:
+  - **Endpoint**: `POST /api/seed-sample` (development only, blocked in production)
+  - **Authentication**: Admin token required in `Authorization: Bearer <token>` header
+  - **Token Management**: Auto-generated on startup or set via `ADMIN_SEED_TOKEN` env var
+  - **Dev Info**: `GET /api/dev-info` provides admin token and seeding instructions
+  - **Schema Templates**: Located in `/migrations/mock_backups/` for reference
 
 ## Key Components
 
