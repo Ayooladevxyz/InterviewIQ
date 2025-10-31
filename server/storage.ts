@@ -1,4 +1,4 @@
-import { users, cvAnalyses, mockInterviews, userProgress, type User, type InsertUser, type CvAnalysis, type InsertCvAnalysis, type MockInterview, type InsertMockInterview, type UserProgress, type InsertUserProgress } from "@shared/schema";
+import { users, cvAnalyses, mockInterviews, interviewSessions, userProgress, type User, type InsertUser, type CvAnalysis, type InsertCvAnalysis, type MockInterview, type InsertMockInterview, type InterviewSession, type InsertInterviewSession, type UserProgress, type InsertUserProgress } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
@@ -22,6 +22,12 @@ export interface IStorage {
   getMockInterviewsByUserId(userId: number): Promise<MockInterview[]>;
   getRecentMockInterviews(userId: number, limit: number): Promise<MockInterview[]>;
   
+  createInterviewSession(session: InsertInterviewSession): Promise<InterviewSession>;
+  getInterviewSession(id: number): Promise<InterviewSession | undefined>;
+  getActiveInterviewSession(userId: number): Promise<InterviewSession | undefined>;
+  updateInterviewSession(id: number, updates: Partial<InsertInterviewSession>): Promise<InterviewSession>;
+  getUserInterviewSessions(userId: number): Promise<InterviewSession[]>;
+  
   getUserProgress(userId: number): Promise<UserProgress | undefined>;
   updateUserProgress(userId: number, progress: Partial<InsertUserProgress>): Promise<UserProgress>;
   
@@ -32,6 +38,7 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private cvAnalyses: Map<number, CvAnalysis>;
   private mockInterviews: Map<number, MockInterview>;
+  private interviewSessions: Map<number, InterviewSession>;
   private userProgress: Map<number, UserProgress>;
   currentId: number;
   sessionStore: session.Store;
@@ -40,6 +47,7 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.cvAnalyses = new Map();
     this.mockInterviews = new Map();
+    this.interviewSessions = new Map();
     this.userProgress = new Map();
     this.currentId = 1;
     this.sessionStore = new MemoryStore({
@@ -95,7 +103,14 @@ export class MemStorage implements IStorage {
       ...analysis, 
       id, 
       createdAt: new Date(),
-      rewrittenVersion: analysis.rewrittenVersion ?? null
+      rewrittenVersion: analysis.rewrittenVersion ?? null,
+      strengths: analysis.strengths ?? null,
+      weaknesses: analysis.weaknesses ?? null,
+      nextSteps: analysis.nextSteps ?? null,
+      careerTrajectory: analysis.careerTrajectory ?? null,
+      salaryInsights: analysis.salaryInsights ?? null,
+      extractedSkills: analysis.extractedSkills ?? null,
+      detectedJobRole: analysis.detectedJobRole ?? null
     };
     this.cvAnalyses.set(id, cvAnalysis);
     return cvAnalysis;
@@ -150,6 +165,50 @@ export class MemStorage implements IStorage {
     } as UserProgress;
     this.userProgress.set(userId, updated);
     return updated;
+  }
+
+  async createInterviewSession(sessionData: InsertInterviewSession): Promise<InterviewSession> {
+    const id = this.currentId++;
+    const session: InterviewSession = {
+      ...sessionData,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: sessionData.status ?? "in_progress",
+      difficulty: sessionData.difficulty ?? "mixed",
+      answeredQuestions: sessionData.answeredQuestions ?? 0
+    };
+    this.interviewSessions.set(id, session);
+    return session;
+  }
+
+  async getInterviewSession(id: number): Promise<InterviewSession | undefined> {
+    return this.interviewSessions.get(id);
+  }
+
+  async getActiveInterviewSession(userId: number): Promise<InterviewSession | undefined> {
+    return Array.from(this.interviewSessions.values())
+      .filter(s => s.userId === userId && s.status === "in_progress")
+      .sort((a, b) => b.updatedAt!.getTime() - a.updatedAt!.getTime())[0];
+  }
+
+  async updateInterviewSession(id: number, updates: Partial<InsertInterviewSession>): Promise<InterviewSession> {
+    const existing = this.interviewSessions.get(id);
+    const updated: InterviewSession = {
+      ...existing,
+      ...updates,
+      id: existing?.id || id,
+      userId: existing?.userId || 0,
+      updatedAt: new Date(),
+    } as InterviewSession;
+    this.interviewSessions.set(id, updated);
+    return updated;
+  }
+
+  async getUserInterviewSessions(userId: number): Promise<InterviewSession[]> {
+    return Array.from(this.interviewSessions.values())
+      .filter(s => s.userId === userId)
+      .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
   }
 }
 
@@ -260,6 +319,54 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userProgress.userId, userId))
       .returning();
     return updated;
+  }
+
+  async createInterviewSession(sessionData: InsertInterviewSession): Promise<InterviewSession> {
+    const [session] = await db
+      .insert(interviewSessions)
+      .values(sessionData)
+      .returning();
+    return session;
+  }
+
+  async getInterviewSession(id: number): Promise<InterviewSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(interviewSessions)
+      .where(eq(interviewSessions.id, id));
+    return session || undefined;
+  }
+
+  async getActiveInterviewSession(userId: number): Promise<InterviewSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(interviewSessions)
+      .where(eq(interviewSessions.userId, userId))
+      .orderBy(desc(interviewSessions.updatedAt))
+      .limit(1);
+    
+    // Only return if it's still in progress
+    if (session && session.status === "in_progress") {
+      return session;
+    }
+    return undefined;
+  }
+
+  async updateInterviewSession(id: number, updates: Partial<InsertInterviewSession>): Promise<InterviewSession> {
+    const [updated] = await db
+      .update(interviewSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(interviewSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getUserInterviewSessions(userId: number): Promise<InterviewSession[]> {
+    return db
+      .select()
+      .from(interviewSessions)
+      .where(eq(interviewSessions.userId, userId))
+      .orderBy(desc(interviewSessions.createdAt));
   }
 }
 

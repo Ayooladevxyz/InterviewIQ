@@ -11,6 +11,20 @@ export interface CvAnalysisResult {
   suggestions: string[];
   rewrittenVersion: string;
   improvements: string[];
+  strengths: string[];
+  weaknesses: string[];
+  nextSteps: string[];
+  careerTrajectory: string[];
+  salaryInsights: {
+    roleTitle: string;
+    experienceLevel: string;
+    salaryRangeUS: string;
+    salaryRangeUK: string;
+    salaryRangeRemote: string;
+    factors: string[];
+  };
+  extractedSkills: string[];
+  detectedJobRole: string;
 }
 
 export interface InterviewFeedback {
@@ -32,7 +46,7 @@ export interface CareerInsights {
 
 export async function analyzeCv(cvText: string): Promise<CvAnalysisResult> {
   try {
-    const systemPrompt = `You are a professional CV analyst. Analyze the CV and provide a comprehensive assessment including score (1-100), suggestions for improvement, and a rewritten version. Respond with JSON in this format: { 'score': number, 'suggestions': string[], 'rewrittenVersion': string, 'improvements': string[] }`;
+    const systemPrompt = `You are a professional CV analyst and career advisor. Analyze the CV and provide a comprehensive, structured assessment. Extract key information and provide actionable insights. Respond with JSON matching this exact format: { 'score': number, 'suggestions': string[], 'rewrittenVersion': string, 'improvements': string[], 'strengths': string[], 'weaknesses': string[], 'nextSteps': string[], 'careerTrajectory': string[], 'salaryInsights': {'roleTitle': string, 'experienceLevel': string, 'salaryRangeUS': string, 'salaryRangeUK': string, 'salaryRangeRemote': string, 'factors': string[]}, 'extractedSkills': string[], 'detectedJobRole': string }`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
@@ -45,12 +59,45 @@ export async function analyzeCv(cvText: string): Promise<CvAnalysisResult> {
             score: { type: "number" },
             suggestions: { type: "array", items: { type: "string" } },
             rewrittenVersion: { type: "string" },
-            improvements: { type: "array", items: { type: "string" } }
+            improvements: { type: "array", items: { type: "string" } },
+            strengths: { type: "array", items: { type: "string" } },
+            weaknesses: { type: "array", items: { type: "string" } },
+            nextSteps: { type: "array", items: { type: "string" } },
+            careerTrajectory: { type: "array", items: { type: "string" } },
+            salaryInsights: {
+              type: "object",
+              properties: {
+                roleTitle: { type: "string" },
+                experienceLevel: { type: "string" },
+                salaryRangeUS: { type: "string" },
+                salaryRangeUK: { type: "string" },
+                salaryRangeRemote: { type: "string" },
+                factors: { type: "array", items: { type: "string" } }
+              },
+              required: ["roleTitle", "experienceLevel", "salaryRangeUS", "salaryRangeUK", "salaryRangeRemote", "factors"]
+            },
+            extractedSkills: { type: "array", items: { type: "string" } },
+            detectedJobRole: { type: "string" }
           },
-          required: ["score", "suggestions", "rewrittenVersion", "improvements"]
+          required: ["score", "suggestions", "rewrittenVersion", "improvements", "strengths", "weaknesses", "nextSteps", "careerTrajectory", "salaryInsights", "extractedSkills", "detectedJobRole"]
         }
       },
-      contents: `Please analyze this CV and provide detailed feedback:\n\n${cvText}`
+      contents: `Analyze this CV comprehensively:
+
+${cvText}
+
+Provide:
+1. Overall score (1-100) based on clarity, relevance, and professionalism
+2. Key strengths that make this candidate stand out
+3. Weaknesses or gaps that need improvement
+4. Specific suggestions for improvement
+5. Concrete next steps for career advancement
+6. Realistic career trajectory (5-7 stages from current level to senior roles)
+7. Salary insights with current market ranges for US, UK, and remote positions
+8. All technical and professional skills mentioned
+9. The primary job role this CV targets
+
+Be specific, actionable, and encouraging in your feedback.`
     });
 
     const text = response.text || "{}";
@@ -61,6 +108,20 @@ export async function analyzeCv(cvText: string): Promise<CvAnalysisResult> {
       suggestions: parsed.suggestions || [],
       rewrittenVersion: parsed.rewrittenVersion || "",
       improvements: parsed.improvements || [],
+      strengths: parsed.strengths || [],
+      weaknesses: parsed.weaknesses || [],
+      nextSteps: parsed.nextSteps || [],
+      careerTrajectory: parsed.careerTrajectory || [],
+      salaryInsights: parsed.salaryInsights || {
+        roleTitle: "Not detected",
+        experienceLevel: "Not specified",
+        salaryRangeUS: "Data not available",
+        salaryRangeUK: "Data not available",
+        salaryRangeRemote: "Data not available",
+        factors: []
+      },
+      extractedSkills: parsed.extractedSkills || [],
+      detectedJobRole: parsed.detectedJobRole || "Not specified",
     };
   } catch (error) {
     throw new Error("Failed to analyze CV: " + (error as Error).message);
@@ -248,3 +309,154 @@ export const trendingJobRoles = [
   "Data Engineer",
   "QA Engineer"
 ];
+
+export interface InterviewQuestion {
+  id: string;
+  question: string;
+  type: string; // "technical", "behavioral", "situational"
+  difficulty: string; // "easy", "medium", "hard"
+  category: string; // e.g., "JavaScript", "System Design", "Leadership"
+  expectedPoints: string[];
+}
+
+export interface InterviewQuestionsSet {
+  questions: InterviewQuestion[];
+  totalQuestions: number;
+  estimatedDuration: string;
+  skillsAssessed: string[];
+}
+
+/**
+ * Generate interview questions based on CV analysis and job role
+ */
+export async function generateInterviewQuestions(
+  cvAnalysis: CvAnalysisResult,
+  jobRole: string,
+  difficulty: string = "mixed"
+): Promise<InterviewQuestionsSet> {
+  try {
+    const systemPrompt = `You are an expert technical recruiter and interview coach. Generate realistic, challenging interview questions tailored to the candidate's background and target role. Mix technical, behavioral, and situational questions. Respond with JSON matching this format: { 'questions': [{'id': string, 'question': string, 'type': string, 'difficulty': string, 'category': string, 'expectedPoints': string[]}], 'totalQuestions': number, 'estimatedDuration': string, 'skillsAssessed': string[] }`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            questions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  question: { type: "string" },
+                  type: { type: "string" },
+                  difficulty: { type: "string" },
+                  category: { type: "string" },
+                  expectedPoints: { type: "array", items: { type: "string" } }
+                },
+                required: ["id", "question", "type", "difficulty", "category", "expectedPoints"]
+              }
+            },
+            totalQuestions: { type: "number" },
+            estimatedDuration: { type: "string" },
+            skillsAssessed: { type: "array", items: { type: "string" } }
+          },
+          required: ["questions", "totalQuestions", "estimatedDuration", "skillsAssessed"]
+        }
+      },
+      contents: `Generate 8-12 interview questions for this candidate profile:
+
+Job Role: ${jobRole}
+Experience Level: ${cvAnalysis.salaryInsights.experienceLevel}
+Skills: ${cvAnalysis.extractedSkills.join(", ")}
+Strengths: ${cvAnalysis.strengths.join(", ")}
+Areas to Improve: ${cvAnalysis.weaknesses.join(", ")}
+
+Create a balanced set of:
+- Technical questions (40%): Test core skills and knowledge
+- Behavioral questions (30%): Assess soft skills and teamwork
+- Situational questions (30%): Evaluate problem-solving and decision-making
+
+Difficulty: ${difficulty}
+
+For each question, provide:
+- Unique ID (e.g., "q1", "q2")
+- Clear, specific question text
+- Type: "technical", "behavioral", or "situational"
+- Difficulty: "easy", "medium", or "hard"
+- Category/Topic (e.g., "React", "Team Collaboration", "System Design")
+- Key points that a strong answer should cover`
+    });
+
+    const text = response.text || "{}";
+    const parsed = JSON.parse(text);
+    
+    return {
+      questions: parsed.questions || [],
+      totalQuestions: parsed.totalQuestions || parsed.questions?.length || 0,
+      estimatedDuration: parsed.estimatedDuration || "45-60 minutes",
+      skillsAssessed: parsed.skillsAssessed || cvAnalysis.extractedSkills
+    };
+  } catch (error) {
+    console.error("Failed to generate interview questions:", error);
+    return getFallbackQuestions(jobRole);
+  }
+}
+
+/**
+ * Fallback interview questions when API is unavailable
+ */
+function getFallbackQuestions(jobRole: string): InterviewQuestionsSet {
+  const fallbackQuestions: InterviewQuestion[] = [
+    {
+      id: "q1",
+      question: "Tell me about a challenging project you worked on and how you overcame obstacles.",
+      type: "behavioral",
+      difficulty: "medium",
+      category: "Problem Solving",
+      expectedPoints: ["Specific project details", "Challenges faced", "Solutions implemented", "Outcomes achieved"]
+    },
+    {
+      id: "q2",
+      question: "Explain your approach to debugging a complex issue in production.",
+      type: "technical",
+      difficulty: "medium",
+      category: "Debugging",
+      expectedPoints: ["Systematic approach", "Tools used", "Root cause analysis", "Prevention strategies"]
+    },
+    {
+      id: "q3",
+      question: "How do you stay updated with the latest technologies in your field?",
+      type: "behavioral",
+      difficulty: "easy",
+      category: "Continuous Learning",
+      expectedPoints: ["Learning resources", "Practical application", "Community involvement"]
+    },
+    {
+      id: "q4",
+      question: "Describe a situation where you had to work with a difficult team member.",
+      type: "situational",
+      difficulty: "medium",
+      category: "Teamwork",
+      expectedPoints: ["Communication approach", "Conflict resolution", "Positive outcome"]
+    },
+    {
+      id: "q5",
+      question: "Walk me through how you would design a scalable system for [relevant use case].",
+      type: "technical",
+      difficulty: "hard",
+      category: "System Design",
+      expectedPoints: ["Architecture choices", "Scalability considerations", "Trade-offs", "Technologies"]
+    }
+  ];
+
+  return {
+    questions: fallbackQuestions,
+    totalQuestions: fallbackQuestions.length,
+    estimatedDuration: "45-60 minutes",
+    skillsAssessed: ["Problem Solving", "Technical Skills", "Communication", "Teamwork"]
+  };
+}

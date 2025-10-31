@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { upload, parseDocument, cleanupFile } from "./services/fileUpload";
-import { analyzeCv, scoreInterviewAnswer, getCareerInsights, trendingJobRoles } from "./services/gemini";
+import { analyzeCv, scoreInterviewAnswer, getCareerInsights, trendingJobRoles, generateInterviewQuestions } from "./services/gemini";
+import { getCourseRecommendations, getCoursesFromCvAnalysis } from "./services/courseRecommendations";
 import { generateFeedbackReport } from "./services/pdfGenerator";
 import { insertCvAnalysisSchema, insertMockInterviewSchema, UserProgress } from "@shared/schema";
 import { requireAdminAuth, getAdminToken } from "./services/adminAuth";
@@ -46,6 +47,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         score: analysis.score,
         suggestions: analysis.suggestions,
         rewrittenVersion: analysis.rewrittenVersion,
+        strengths: analysis.strengths,
+        weaknesses: analysis.weaknesses,
+        nextSteps: analysis.nextSteps,
+        careerTrajectory: analysis.careerTrajectory,
+        salaryInsights: analysis.salaryInsights,
+        extractedSkills: analysis.extractedSkills,
+        detectedJobRole: analysis.detectedJobRole,
       });
 
       // Update user progress
@@ -64,6 +72,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         suggestions: analysis.suggestions,
         rewrittenVersion: analysis.rewrittenVersion,
         improvements: analysis.improvements,
+        strengths: analysis.strengths,
+        weaknesses: analysis.weaknesses,
+        nextSteps: analysis.nextSteps,
+        careerTrajectory: analysis.careerTrajectory,
+        salaryInsights: analysis.salaryInsights,
+        extractedSkills: analysis.extractedSkills,
+        detectedJobRole: analysis.detectedJobRole,
       });
     } catch (error) {
       if (req.file) {
@@ -223,6 +238,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const interviews = await storage.getMockInterviewsByUserId(req.user.id);
       res.json(interviews);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get course recommendations based on skills and job role
+  app.post("/api/course-recommendations", requireAuth, async (req: any, res) => {
+    try {
+      const { skills, jobRole, userLevel } = req.body;
+      
+      if (!skills || !jobRole) {
+        return res.status(400).json({ message: "Skills and job role are required" });
+      }
+
+      const recommendations = await getCourseRecommendations(
+        skills, 
+        jobRole, 
+        userLevel || "intermediate"
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get course recommendations from CV analysis
+  app.get("/api/cv/:id/courses", requireAuth, async (req: any, res) => {
+    try {
+      const cvId = parseInt(req.params.id);
+      const cv = await storage.getCvAnalysis(cvId);
+      
+      if (!cv) {
+        return res.status(404).json({ message: "CV analysis not found" });
+      }
+      
+      if (cv.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const recommendations = await getCoursesFromCvAnalysis(
+        cv.originalText,
+        cv.suggestions as string[],
+        cv.detectedJobRole || undefined
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Generate interview questions based on CV analysis
+  app.get("/api/cv/:id/interview-questions", requireAuth, async (req: any, res) => {
+    try {
+      const cvId = parseInt(req.params.id);
+      const cv = await storage.getCvAnalysis(cvId);
+      
+      if (!cv) {
+        return res.status(404).json({ message: "CV analysis not found" });
+      }
+      
+      if (cv.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Reconstruct the CV analysis result for question generation
+      const cvAnalysis = {
+        score: cv.score,
+        suggestions: cv.suggestions as string[],
+        rewrittenVersion: cv.rewrittenVersion || "",
+        improvements: [],
+        strengths: (cv.strengths as string[]) || [],
+        weaknesses: (cv.weaknesses as string[]) || [],
+        nextSteps: (cv.nextSteps as string[]) || [],
+        careerTrajectory: (cv.careerTrajectory as string[]) || [],
+        salaryInsights: (cv.salaryInsights as any) || {
+          roleTitle: "Not detected",
+          experienceLevel: "Not specified",
+          salaryRangeUS: "Data not available",
+          salaryRangeUK: "Data not available",
+          salaryRangeRemote: "Data not available",
+          factors: []
+        },
+        extractedSkills: (cv.extractedSkills as string[]) || [],
+        detectedJobRole: cv.detectedJobRole || "Software Engineer"
+      };
+
+      const difficulty = req.query.difficulty as string || "mixed";
+      const questions = await generateInterviewQuestions(
+        cvAnalysis,
+        cv.detectedJobRole || "Software Engineer",
+        difficulty
+      );
+      
+      res.json(questions);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Create new interview session
+  app.post("/api/interview-sessions", requireAuth, async (req: any, res) => {
+    try {
+      const { jobRole, difficulty, questions } = req.body;
+      
+      if (!jobRole || !questions || !Array.isArray(questions)) {
+        return res.status(400).json({ message: "Job role and questions are required" });
+      }
+
+      const session = await storage.createInterviewSession({
+        userId: req.user.id,
+        jobRole,
+        difficulty: difficulty || "mixed",
+        totalQuestions: questions.length,
+        answeredQuestions: 0,
+        questions: questions,
+        status: "in_progress"
+      });
+      
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get active interview session
+  app.get("/api/interview-sessions/active", requireAuth, async (req: any, res) => {
+    try {
+      const session = await storage.getActiveInterviewSession(req.user.id);
+      res.json(session || null);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get all interview sessions for user
+  app.get("/api/interview-sessions", requireAuth, async (req: any, res) => {
+    try {
+      const sessions = await storage.getUserInterviewSessions(req.user.id);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Update interview session
+  app.patch("/api/interview-sessions/:id", requireAuth, async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const session = await storage.getInterviewSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Interview session not found" });
+      }
+      
+      if (session.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updated = await storage.updateInterviewSession(sessionId, req.body);
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }

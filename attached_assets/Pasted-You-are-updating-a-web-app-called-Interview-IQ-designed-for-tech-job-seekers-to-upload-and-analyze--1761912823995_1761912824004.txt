@@ -1,0 +1,100 @@
+You are updating a web app called Interview IQ, designed for tech job seekers to upload and analyze their CVs, rate their professional readiness, and access personalized learning resources. The app already has the Gemini API integrated, which successfully logs requests and token usage. Follow these detailed steps to refactor and upgrade the app:
+
+1. Remove all mock data:
+
+Delete any fake user profiles, placeholder resumes, test course lists, and hardcoded ratings.
+
+Replace them with empty data structures ready to accept dynamic content.
+
+Ensure all data references are fetched from the backend or generated in real time by the Gemini API or scraper functions.
+
+
+2. Set up persistent user data storage:
+
+Configure the app to save user profiles, CV uploads, progress, and skill assessments in a persistent store.
+
+Use Supabase or Firebase only if necessary for login/auth + cloud storage, but make sure the app can also run smoothly on Render after export.
+
+If no external DB is used yet, implement localStorage fallback to preserve user sessions, progress, and uploaded CVs even after logout or refresh.
+
+
+3. Integrate Gemini API for smarter analysis and recommendations:
+
+Use Gemini to:
+
+Analyze uploaded CVs (extract skills, roles, experience).
+
+Suggest career paths, skill gaps, and improvement plans.
+
+Fetch and summarize relevant courses from Coursera and Udemy.
+
+Generate interview questions and feedback for the mock interview feature.
+
+
+Keep requests efficient and within token limits by caching recent queries.
+
+
+4. Add web scraping logic for Coursera and Udemy:
+
+Build scraper functions (Node.js or Python) that:
+
+Pull course names, short descriptions, URLs, and prices (if available).
+
+Filter results based on skill keywords or Gemini analysis output.
+
+Store and refresh scraped data in a lightweight JSON file or cache.
+
+Avoid copyright issues by scraping only public data (titles, links, metadata — not full content).
+
+
+Make Gemini combine scraped data and its own web knowledge for more precise course recommendations.
+
+
+5. Enable advanced CV analysis and salary insights:
+
+Extend Gemini’s analysis output to include:
+
+Estimated salary range for the role and location.
+
+In-demand skills related to the user’s current expertise.
+
+Career growth trajectory suggestions (e.g., “From Junior Frontend Dev → Mid-Level → UI Engineer”).
+
+
+Format Gemini’s output into structured sections like “Strengths”, “Weaknesses”, “Next Steps”, “Recommended Courses”, and “Salary Insights”.
+
+
+6. Optimize the mock interview system:
+
+Let Gemini generate behavioral and technical interview questions relevant to the analyzed CV.
+
+Store interview results (questions answered, Gemini’s feedback) under each user’s profile for later review.
+
+Ensure mock interviews can resume where they left off after logout.
+
+
+7. Final adjustments:
+
+Add error handling for Gemini API timeouts or over-limit usage.
+
+Include loading states for analysis and fetching actions.
+
+Prepare the entire project to be export-ready for Render deployment without DB migration issues.
+
+Test the workflow end-to-end using a sample CV file (PDF/DOCX) and confirm data persists after logout.
+
+
+Goal:
+By the end of this task, Interview IQ should have:
+
+No mock data, fully dynamic real-time fetching.
+
+Persistent account data (localStorage or optional cloud DB).
+
+Gemini-powered CV analysis and course recommendation.
+
+Functional scraping from Coursera and Udemy.
+
+Improved mock interview AI flow.
+
+Ready deployment structure for Render.
