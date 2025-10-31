@@ -263,4 +263,49 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+/**
+ * Factory function to create the appropriate storage instance
+ * based on environment and configuration.
+ * 
+ * PRODUCTION: Always uses DatabaseStorage (PostgreSQL)
+ * DEVELOPMENT: Uses DatabaseStorage by default, can use MemStorage with explicit env var
+ */
+function createStorage(): IStorage {
+  const env = process.env.NODE_ENV || 'development';
+  const forceMemStorage = process.env.USE_MEM_STORAGE === 'true';
+
+  // PRODUCTION GUARD: Never allow MemStorage in production
+  if (env === 'production' && forceMemStorage) {
+    throw new Error(
+      'SECURITY ERROR: MemStorage is not allowed in production. ' +
+      'All production data must use DatabaseStorage (PostgreSQL).'
+    );
+  }
+
+  // PRODUCTION: Always use DatabaseStorage
+  if (env === 'production') {
+    console.log('[Storage] Production mode: Using DatabaseStorage (PostgreSQL)');
+    return new DatabaseStorage();
+  }
+
+  // DEVELOPMENT: Allow MemStorage only with explicit opt-in
+  if (forceMemStorage) {
+    console.warn(
+      '[Storage] ⚠️  WARNING: Using MemStorage (in-memory) - data will be lost on restart. ' +
+      'Set USE_MEM_STORAGE=false to use DatabaseStorage.'
+    );
+    return new MemStorage();
+  }
+
+  // DEFAULT: Use DatabaseStorage
+  console.log('[Storage] Development mode: Using DatabaseStorage (PostgreSQL)');
+  return new DatabaseStorage();
+}
+
+/**
+ * Global storage instance - automatically configured based on environment
+ * 
+ * Production: Always PostgreSQL DatabaseStorage
+ * Development: PostgreSQL DatabaseStorage (default) or MemStorage (opt-in with USE_MEM_STORAGE=true)
+ */
+export const storage = createStorage();
