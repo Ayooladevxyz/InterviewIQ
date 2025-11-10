@@ -33,6 +33,15 @@ InterviewIQ is an AI-powered job interview and career preparation platform built
 - ✅ **API Endpoints**: New REST endpoints for course recommendations, interview questions, and session management
 - ✅ **Architect Review**: Code quality verified with recommendations for Zod validation and expanded test coverage
 
+### November 10, 2025 - Render.com Deployment Configuration
+- ✅ **Production Build Scripts**: Created `scripts/build.sh` for building both frontend (Vite) and backend (esbuild)
+- ✅ **Render Configuration**: Added `render.yaml` for automated deployment with web service and PostgreSQL database
+- ✅ **Build Process**: Frontend builds to `dist/public/`, backend bundles to `dist/index.js`
+- ✅ **Deployment Documentation**: Comprehensive `DEPLOYMENT.md` with step-by-step Render setup instructions
+- ✅ **Environment Variables**: Documented all required variables (DATABASE_URL, GEMINI_API_KEY, SESSION_SECRET, NODE_ENV)
+- ✅ **Build Testing**: Verified production build process works correctly (frontend: 117KB gzipped, backend: 70KB)
+- ✅ **Deployment Options**: Both automatic (Blueprint) and manual deployment paths documented
+
 ### January 21, 2025 - Database Integration & Career Insights Fix
 - ✅ Migrated from in-memory storage to PostgreSQL database
 - ✅ Implemented DatabaseStorage class with full CRUD operations
@@ -163,6 +172,17 @@ Preferred communication style: Simple, everyday language.
 1. Frontend: Vite builds React app to `dist/public`
 2. Backend: esbuild bundles server code to `dist/index.js`
 3. Single deployment artifact with both frontend and backend
+4. Build command: `bash scripts/build.sh`
+
+### Render.com Deployment
+- **Configuration File**: `render.yaml` for automated Blueprint deployment
+- **Build Command**: `bash scripts/build.sh`
+- **Start Command**: `npm start`
+- **Database**: PostgreSQL database automatically provisioned and connected
+- **Deployment Options**:
+  - Automatic: Push repository to Render as Blueprint
+  - Manual: Create web service and database separately via Render dashboard
+- **Complete Guide**: See `DEPLOYMENT.md` for step-by-step instructions
 
 ### Environment Configuration
 - DATABASE_URL for PostgreSQL connection
@@ -174,5 +194,6 @@ Preferred communication style: Simple, everyday language.
 - Drizzle migrations stored in `./migrations`
 - Schema definitions in `shared/schema.ts`
 - Push command for development schema updates
+- Production deployment: Run `npm run db:push` after first deployment
 
 The application follows a monorepo structure with shared TypeScript types, clean separation of concerns, and comprehensive error handling throughout the stack.
